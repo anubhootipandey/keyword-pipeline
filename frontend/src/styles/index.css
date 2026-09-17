@@ -1,0 +1,57 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fafafa;
+  color: #1a1a1a;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 24px;
+}
+
+.status {
+  font-size: 0.95rem;
+}
+
+.status-badge {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.status-checking {
+  background: #eee;
+  color: #555;
+}
+
+.status-connected {
+  background: #e3f5e9;
+  color: #1e7a3d;
+}
+
+.status-unreachable {
+  background: #fbe6e6;
+  color: #b3261e;
+}
