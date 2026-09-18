@@ -33,16 +33,35 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # --- General ---
     APP_NAME: str = "Keyword Intelligence Pipeline"
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
 
+    # --- Server ---
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # --- CORS ---
+    # Comma-separated list of allowed origins for the frontend dev server.
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # --- Input limits ---
+    # Maximum number of characters accepted for a single analysis request.
+    # This exists so a single request can't tie up the process with an
+    # unbounded amount of text (see docs/architecture.md, "Security" once
+    # written). 50,000 characters is roughly a long-form article/report —
+    # generous for the intended use case, not "paste a whole book".
     MAX_INPUT_LENGTH: int = 50_000
+
+    # --- Linguistic extraction (Phase 5) ---
+    # Name of the spaCy pipeline package to load. en_core_web_sm is the
+    # small English model (~12MB on disk, no transformer weights) —
+    # deliberately not en_core_web_md/lg/trf, which are far heavier and
+    # not appropriate for the project's ~4GB RAM target. See
+    # app/pipeline/linguistic_extractor.py for what this model does and
+    # does not provide.
+    SPACY_MODEL_NAME: str = "en_core_web_sm"
 
     @property
     def cors_origins_list(self) -> list[str]:
