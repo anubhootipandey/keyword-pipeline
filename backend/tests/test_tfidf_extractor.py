@@ -1,10 +1,3 @@
-"""
-Tests for Stage 2A — TF-IDF candidate extraction.
-
-These test actual ranking/scoring behavior, not just "did this return a
-list". Each test class maps to one of the required scenarios from the
-project spec.
-"""
 
 import pytest
 
@@ -29,8 +22,6 @@ class TestRepeatedImportantTerms:
         result = extract_tfidf_candidates(ML_TEXT)
         phrases = [c.phrase for c in result.candidates]
 
-        # "machine learning models" (and its sub-n-grams) appears in all
-        # 3 sentences; "datasets" appears in exactly 1.
         top_phrases = phrases[:6]
         assert "machine learning models" in top_phrases
         assert "datasets" not in top_phrases
@@ -43,8 +34,6 @@ class TestRepeatedImportantTerms:
         assert by_phrase["datasets"].document_frequency == 1
 
     def test_sublinear_scaling_dampens_pure_repetition(self):
-        # A word repeated 10 times in one sentence shouldn't score 10x
-        # a word appearing once elsewhere - sublinear_tf logs it.
         text = "spam spam spam spam spam spam spam spam spam spam. Ham appears once here."
         result = extract_tfidf_candidates(text)
         by_phrase = {c.phrase: c for c in result.candidates}
@@ -151,13 +140,11 @@ class TestEmptyAndInvalidInput:
 
     def test_non_string_raises_type_error(self):
         with pytest.raises(TypeError):
-            extract_tfidf_candidates(None)  # type: ignore[arg-type]
+            extract_tfidf_candidates(None)  
 
 
 class TestNoUsableVocabulary:
     def test_only_symbols_and_single_digits_yields_no_candidates(self):
-        # No sequence of 2+ word characters anywhere in this string, so
-        # the vectorizer's vocabulary is empty. Must not crash.
         result = extract_tfidf_candidates("1 2 3 ! ? -")
         assert result.candidates == []
         assert result.vocabulary_size == 0
@@ -178,10 +165,6 @@ class TestDeterministicRanking:
         assert first_seq == second_seq
 
     def test_tied_scores_break_ties_alphabetically(self):
-        # "machine", "learning", "models" (and their 2/3-word
-        # combinations) are all tied at the top since they co-occur in
-        # every sentence — verify the tie-break is deterministic and
-        # alphabetical rather than arbitrary.
         result = extract_tfidf_candidates(ML_TEXT)
         top_score = result.candidates[0].raw_score
         tied = [c.phrase for c in result.candidates if c.raw_score == top_score]
@@ -202,7 +185,6 @@ class TestCandidateLimit:
     def test_default_limit_caps_large_vocabulary(self):
         result = extract_tfidf_candidates(ML_TEXT, max_candidates=3)
         assert len(result.candidates) == 3
-        # Should be the 3 highest-scoring candidates, not an arbitrary subset.
         full_result = extract_tfidf_candidates(ML_TEXT)
         assert [c.phrase for c in result.candidates] == [
             c.phrase for c in full_result.candidates[:3]
@@ -215,9 +197,6 @@ class TestRawScorePreservation:
         raw_scores = [c.raw_score for c in result.candidates]
         normalized_scores = [c.normalized_score for c in result.candidates]
 
-        # These should generally differ (different scales) except in
-        # degenerate all-equal cases, so this is a meaningful check for
-        # a text with actual score variance.
         assert raw_scores != normalized_scores
         assert all(score > 0 for score in raw_scores)
 
@@ -288,4 +267,4 @@ class TestCandidateDataclass:
             phrase="test", raw_score=1.0, normalized_score=1.0, ngram_size=1, document_frequency=1
         )
         with pytest.raises(Exception):
-            candidate.phrase = "changed"  # type: ignore[misc]
+            candidate.phrase = "changed"  

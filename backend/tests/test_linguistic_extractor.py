@@ -1,13 +1,3 @@
-"""
-Tests for Stage 2C — spaCy linguistic candidate extraction.
-
-These test behavior (which phrases survive, what gets trimmed, what
-ranks higher) rather than depending on spaCy's exact internal
-tokenization/parsing decisions, since those can shift slightly between
-model versions. Where a specific spaCy behavior IS asserted on (e.g. a
-known small-model parsing limitation), it was verified directly against
-the installed model before being written into a test, not assumed.
-"""
 
 import pytest
 
@@ -69,7 +59,6 @@ class TestMultiWordTechnicalPhrases:
     def test_ngram_size_matches_actual_kept_word_count(self):
         result = extract_linguistic_candidates(REACT_TEXT)
         for c in result.candidates:
-            # Kept word count should match the normalized phrase's word count.
             assert c.ngram_size == len(c.normalized_phrase.split())
 
 
@@ -77,15 +66,12 @@ class TestLemmatizationAndNormalization:
     def test_plural_noun_lemmatizes_to_singular_in_normalized_form(self):
         result = extract_linguistic_candidates(REACT_TEXT)
         by_normalized = {c.normalized_phrase: c for c in result.candidates}
-        # "React components" (plural) -> normalized "react component" (singular)
         assert "react component" in by_normalized
         assert by_normalized["react component"].phrase == "React components"
 
     def test_surface_form_is_not_silently_replaced_by_lemma(self):
         result = extract_linguistic_candidates(REACT_TEXT)
         phrases = [c.phrase for c in result.candidates]
-        # The exact surface text "React components" (not "React component")
-        # must be present somewhere as a displayable phrase.
         assert "React components" in phrases
 
     def test_different_inflections_of_same_concept_merge_under_one_normalized_key(self):
@@ -93,7 +79,6 @@ class TestLemmatizationAndNormalization:
         result = extract_linguistic_candidates(text)
         by_normalized = {c.normalized_phrase: c for c in result.candidates}
         assert "model" in by_normalized
-        # Both "model" and "models" contributed to the same normalized entry.
         assert by_normalized["model"].linguistic_signal == 2
 
 
@@ -102,8 +87,6 @@ class TestStopwordsInsideMeaningfulPhrases:
         text = "Out of the box solutions save time. The out of the box experience matters."
         result = extract_linguistic_candidates(text, max_phrase_length=6)
         normalized_phrases = [c.normalized_phrase for c in result.candidates]
-        # Whatever chunk boundary spaCy picks, an internal "of"/"the"
-        # between content words must not be stripped out mid-phrase.
         assert any(
             "of" in phrase.split() or "the" in phrase.split()
             for phrase in normalized_phrases
@@ -140,9 +123,6 @@ class TestPunctuation:
 
 class TestHyphenatedTechnicalTerms:
     def test_hyphenated_compound_noun_phrase_is_extracted(self):
-        # "Real-time" is tokenized as a compound and stays attached to
-        # its noun in the parse - verified directly against the
-        # installed model before writing this assertion.
         text = "Real-time systems require careful design. Real-time systems are complex."
         result = extract_linguistic_candidates(text)
         normalized_phrases = [c.normalized_phrase for c in result.candidates]
@@ -184,7 +164,7 @@ class TestUnicodeAndNonEnglishText:
         text = "Caf\u00e9 culture is popular in Paris. The caf\u00e9 culture continues to grow."
         result = extract_linguistic_candidates(text)
         phrases_joined = " ".join(c.phrase for c in result.candidates)
-        assert "\u00e9" in phrases_joined or len(result.candidates) >= 0  # never crashes
+        assert "\u00e9" in phrases_joined or len(result.candidates) >= 0  
 
     def test_non_latin_script_and_emoji_do_not_crash_extraction(self):
         text = (
@@ -221,7 +201,7 @@ class TestEmptyAndWhitespaceInput:
 
     def test_non_string_raises_type_error(self):
         with pytest.raises(TypeError):
-            extract_linguistic_candidates(None)  # type: ignore[arg-type]
+            extract_linguistic_candidates(None)  
 
     def test_min_greater_than_max_phrase_length_raises_value_error(self):
         with pytest.raises(ValueError):
@@ -257,7 +237,6 @@ class TestConfigurablePhraseLength:
     def test_narrow_max_length_excludes_longer_phrases(self):
         result = extract_linguistic_candidates(REACT_TEXT, min_phrase_length=1, max_phrase_length=2)
         assert all(c.ngram_size <= 2 for c in result.candidates)
-        # The known trigram "machine learning model" must be excluded now.
         assert "machine learning model" not in [c.normalized_phrase for c in result.candidates]
 
 
@@ -284,7 +263,6 @@ class TestRepeatedConcepts:
         result = extract_linguistic_candidates(REACT_TEXT)
         by_normalized = {c.normalized_phrase: c for c in result.candidates}
 
-        # "machine learning models" appears twice, "large datasets" once.
         assert by_normalized["machine learning model"].linguistic_signal == 2
         assert by_normalized["large dataset"].linguistic_signal == 1
         assert (
@@ -367,7 +345,6 @@ class TestModelNotAvailable:
             assert "en_core_web_definitely_not_installed" in message
             assert "python -m spacy download" in message
         finally:
-            # Restore real state so later tests in the suite aren't affected.
             object.__setattr__(settings, "SPACY_MODEL_NAME", original_model)
             le_module._nlp = original_nlp
 
@@ -381,4 +358,4 @@ class TestCandidateDataclass:
         result = extract_linguistic_candidates(REACT_TEXT, max_candidates=1)
         candidate = result.candidates[0]
         with pytest.raises(Exception):
-            candidate.phrase = "modified"  # type: ignore[misc]
+            candidate.phrase = "modified"  

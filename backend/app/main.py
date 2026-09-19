@@ -1,11 +1,3 @@
-"""
-FastAPI application entrypoint.
-
-Run with:
-    uvicorn app.main:app --reload
-
-(from inside the backend/ directory, with the virtual environment active)
-"""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

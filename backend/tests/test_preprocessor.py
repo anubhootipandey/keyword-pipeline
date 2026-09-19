@@ -1,11 +1,3 @@
-"""
-Tests for Stage 1 — text preprocessing.
-
-These test behavior (what the output actually looks like / what gets
-raised), not just "does the function execute without crashing". Each
-test class groups tests for one of the required scenarios from the
-project spec (section 27, "preprocessing" bullet list).
-"""
 
 import pytest
 
@@ -34,8 +26,6 @@ class TestNormalProse:
         text = "React Components are NOT the same as react-native Modules."
         result = preprocess_text(text)
 
-        # Casing and word choice must survive untouched — normalization
-        # for matching purposes belongs to a later stage, not this one.
         assert "React Components" in result.cleaned_text
         assert "react-native" in result.cleaned_text
         assert "NOT" in result.cleaned_text
@@ -52,10 +42,9 @@ class TestEmptyAndWhitespaceInput:
 
     def test_non_string_input_raises_type_error(self):
         with pytest.raises(TypeError):
-            preprocess_text(None)  # type: ignore[arg-type]
+            preprocess_text(None)  
 
     def test_text_reduced_to_nothing_after_cleaning_raises(self):
-        # Only a URL and HTML tags, no actual visible text content.
         with pytest.raises(EmptyTextError):
             preprocess_text("<div></div> https://example.com/only-a-url")
 
@@ -63,7 +52,7 @@ class TestEmptyAndWhitespaceInput:
         from app.core.config import get_settings
 
         max_len = get_settings().MAX_INPUT_LENGTH
-        too_long_text = "word " * (max_len // 4)  # comfortably over the limit
+        too_long_text = "word " * (max_len // 4)  
         assert len(too_long_text) > max_len
 
         with pytest.raises(TextTooLongError) as exc_info:
@@ -136,8 +125,6 @@ class TestURLHandling:
 
     def test_url_removal_does_not_glue_adjacent_words_together(self):
         cleaned, _ = extract_and_remove_urls("seehttps://example.com forinfo")
-        # A space replaces the URL, so words on either side stay separated
-        # rather than merging into "seeforinfo".
         assert cleaned.split() == ["see", "forinfo"]
 
     def test_trailing_sentence_punctuation_excluded_from_url(self):
@@ -163,8 +150,6 @@ class TestRepeatedPunctuation:
         assert normalize_punctuation("Wait......") == "Wait."
 
     def test_single_punctuation_is_untouched(self):
-        # Regression guard: must not collapse legitimate single
-        # occurrences like hyphens in compound words or apostrophes.
         text = "state-of-the-art doesn't break."
         assert normalize_punctuation(text) == text
 
@@ -172,7 +157,7 @@ class TestRepeatedPunctuation:
         result = preprocess_text("Wow!!! Is this real??? I can't believe it...")
         assert "!!!" not in result.cleaned_text
         assert "???" not in result.cleaned_text
-        assert "can't" in result.cleaned_text  # single apostrophe preserved
+        assert "can't" in result.cleaned_text  
 
 
 class TestUnicodeAndNonAscii:

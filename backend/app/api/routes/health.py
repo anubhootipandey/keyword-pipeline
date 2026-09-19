@@ -1,12 +1,3 @@
-"""
-GET /api/health
-
-A trivial liveness check. Deliberately has no dependencies on the NLP
-pipeline (spaCy, sentence-transformers, etc.) so it stays fast and keeps
-working even if a heavier component fails to load — useful once the
-pipeline modules exist, and useful right now as the first thing we can
-actually test end-to-end.
-"""
 
 from fastapi import APIRouter
 

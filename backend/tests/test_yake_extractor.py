@@ -1,17 +1,3 @@
-"""
-Tests for Stage 2B — YAKE candidate extraction.
-
-These test actual ranking/scoring behavior, not just "did this return a
-list". Each test class maps to one of the required scenarios from the
-project spec (Phase 4).
-
-A note on YAKE-specific test design: raw YAKE scores are not asserted
-against exact floating-point literals anywhere here (YAKE's internal
-scoring can shift slightly between versions/feature tweaks). Instead
-tests assert relationships that must hold regardless of the exact
-numbers — "the repeated concept's raw score is lower (better) than a
-one-off word's", "the best raw score normalizes to 1.0", etc.
-"""
 
 import pytest
 
@@ -40,25 +26,21 @@ class TestNormalProse:
     def test_candidates_are_sorted_best_first(self):
         result = extract_yake_candidates(REACT_TEXT)
         raw_scores = [c.raw_score for c in result.candidates]
-        # Raw YAKE scores: lower is better, so best-first means ascending.
         assert raw_scores == sorted(raw_scores)
 
     def test_normalized_scores_are_sorted_best_first_descending(self):
         result = extract_yake_candidates(REACT_TEXT)
         normalized_scores = [c.normalized_score for c in result.candidates]
-        # normalized_score: higher is better, so best-first means descending.
         assert normalized_scores == sorted(normalized_scores, reverse=True)
 
 
 class TestRepeatedImportantConcepts:
     def test_repeated_concept_outranks_one_off_word(self):
-        # "React" appears 6 times across the text; "TypeScript" appears once.
         result = extract_yake_candidates(REACT_TEXT, max_candidates=30)
         by_phrase = {c.phrase: c for c in result.candidates}
 
         assert "React" in by_phrase
         assert "TypeScript" in by_phrase
-        # Lower raw_score = more important in YAKE's convention.
         assert by_phrase["React"].raw_score < by_phrase["TypeScript"].raw_score
 
     def test_repeated_concept_has_higher_normalized_score(self):
@@ -109,7 +91,7 @@ class TestEmptyAndInvalidInput:
 
     def test_non_string_raises_type_error(self):
         with pytest.raises(TypeError):
-            extract_yake_candidates(None)  # type: ignore[arg-type]
+            extract_yake_candidates(None)  
 
     def test_min_greater_than_max_ngram_raises_value_error(self):
         with pytest.raises(ValueError):
@@ -138,12 +120,9 @@ class TestPunctuationHeavyInput:
         result = extract_yake_candidates(text)
         phrases = [c.phrase for c in result.candidates]
         assert len(phrases) > 0
-        # Punctuation characters should not themselves become candidates.
         assert all(not all(ch in "!?.-" for ch in p) for p in phrases)
 
     def test_preprocessed_punctuation_heavy_text_still_extracts(self):
-        # Feed text through Phase 2 first, as it would be in the real
-        # pipeline, to confirm the two stages work together correctly.
         preprocessed = preprocess_text(
             "Wow!!! This is amazing??? Really... incredible!!! Best framework ever!!!"
         )
@@ -218,9 +197,6 @@ class TestDeterministicOutput:
         assert [c.raw_score for c in first.candidates] == [c.raw_score for c in second.candidates]
 
     def test_tied_raw_scores_break_ties_alphabetically(self):
-        # Construct near-identical-frequency single-occurrence words so
-        # ties are plausible, then confirm ordering among any tied group
-        # is alphabetical rather than arbitrary/insertion-order.
         text = "Apple Banana Cherry Date Elderberry are all fruit names used once each here."
         first = extract_yake_candidates(text, max_candidates=20)
         second = extract_yake_candidates(text, max_candidates=20)
@@ -230,9 +206,6 @@ class TestDeterministicOutput:
 class TestRawScorePreservation:
     def test_raw_score_is_not_overwritten_by_normalization(self):
         result = extract_yake_candidates(REACT_TEXT, max_candidates=10)
-        # Raw scores must vary (not all be forced to 0 or 1 the way a
-        # normalized score's edge cases might be) — this is YAKE's real
-        # signal, untouched.
         raw_scores = [c.raw_score for c in result.candidates]
         assert len(set(raw_scores)) > 1
 
@@ -240,7 +213,6 @@ class TestRawScorePreservation:
         result = extract_yake_candidates(REACT_TEXT, max_candidates=10)
         for c in result.candidates:
             assert isinstance(c.raw_score, float)
-            # YAKE raw scores are non-negative "cost" style values.
             assert c.raw_score >= 0.0
 
 
@@ -261,8 +233,6 @@ class TestScoreNormalization:
             assert 0.0 <= c.normalized_score <= 1.0
 
     def test_normalize_function_directly_inverts_direction(self):
-        # Lower raw score (better in YAKE) must map to higher normalized
-        # score (better in the normalized convention).
         normalized = _normalize_yake_scores([0.01, 0.05, 0.10])
         assert normalized[0] > normalized[1] > normalized[2]
         assert normalized[0] == pytest.approx(1.0)
@@ -283,8 +253,6 @@ class TestMultipleCandidatesDifferentRawScores:
     def test_candidates_have_a_spread_of_distinct_raw_scores(self):
         result = extract_yake_candidates(REACT_TEXT, max_candidates=20)
         raw_scores = {c.raw_score for c in result.candidates}
-        # A real article should produce more than one or two distinct
-        # score values, not everything tied.
         assert len(raw_scores) >= 5
 
 
@@ -306,7 +274,6 @@ class TestIntegrationWithPreprocessing:
     def test_preprocessed_text_with_repeated_punctuation_is_clean(self):
         raw = "Amazing!!!! Truly incredible??? A must-have tool...."
         preprocessed = preprocess_text(raw)
-        # Phase 2 already collapsed the repeated punctuation.
         assert "!!!!" not in preprocessed.cleaned_text
         result = extract_yake_candidates(preprocessed.cleaned_text)
         assert isinstance(result.candidates, list)
@@ -321,4 +288,4 @@ class TestCandidateDataclass:
         result = extract_yake_candidates(REACT_TEXT, max_candidates=1)
         candidate = result.candidates[0]
         with pytest.raises(Exception):
-            candidate.phrase = "modified"  # type: ignore[misc]
+            candidate.phrase = "modified" 

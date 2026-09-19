@@ -1,9 +1,3 @@
-"""
-Phase 1 test: confirms the FastAPI app actually boots and the health
-endpoint responds correctly. This is intentionally the only test in
-Phase 1 — later phases add tests for the pipeline modules as they're
-implemented (see section 27 of the project spec).
-"""
 
 import pytest
 from httpx import ASGITransport, AsyncClient
